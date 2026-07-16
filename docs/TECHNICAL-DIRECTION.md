@@ -44,6 +44,18 @@ path is designed. This does not promise to make copying impossible; it is a
 practical boundary that treats original audio separately from static public
 material while accepting browser playback as the premise.
 
+この境界は運用の中で一段進みました。復号鍵は配布物から消え、時間窓ごとに
+失効する短命の鍵に置き換わり、音源は分割チャンクの個別暗号化で届きます。
+複製を不可能にする約束ではないことは変わりません。変わったのは、鍵と道具が
+腐る速さです。
+
+**EN**<br>
+The boundary has since advanced one step in operation. The decryption key is
+gone from everything that ships, replaced by short-lived keys that expire with
+their time window, and the audio arrives as separately encrypted chunks. The
+promise is unchanged — copying is not made impossible. What changed is how
+fast keys and tooling rot.
+
 ## AIとの反復 / Iterating with AI
 
 AIは実装の相手ですが、作品が何をすべきかを決めるのはNULL-Nです。挙動、

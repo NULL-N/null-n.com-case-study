@@ -115,6 +115,20 @@ can play the audio cannot keep it completely secret. The purpose is to separate
 the original audio from static public URLs and unrestricted direct links: a
 delivery boundary for the audio itself.
 
+境界はその後、鍵を配布物から消すところまで進みました。ブラウザはサーバ側で
+時間窓ごとに導出される短命の鍵をハンドシェイクで受け取り、音源は分割された
+チャンクとして個別に暗号化されて届きます。1つのURLがファイル全体を返すことは
+なく、持ち出された鍵や吸い出しの道具は時間で失効します。ブラウザ再生という
+前提は変わらないまま、複製の道具が使い捨てになる構造です。
+
+**EN**<br>
+The boundary has since moved the key out of everything that ships. The browser
+receives a short-lived key through a handshake, derived server-side per time
+window, and the audio arrives as separately encrypted chunks. No single URL
+returns a whole file, and a carried-off key — or a script built around one —
+expires on a timer. The premise of browser playback is unchanged; what changed
+is that copying tools became disposable.
+
 ## 実装設計図 / Implementation architecture
 
 ```mermaid
@@ -151,13 +165,17 @@ sequenceDiagram
   participant R2 as Private audio storage
   Note over Browser,R2: NULL-N — Sound × AI × Engineering
 
-  Browser->>Function: Request published audio
-  Function->>Function: Validate request and catalog
-  Function->>R2: Retrieve audio object
-  R2-->>Function: Original audio bytes
-  Function->>Function: Encrypt response with a new IV
-  Function-->>Browser: Encrypted bytes + IV
-  Browser->>Browser: Decrypt, decode, and play
+  Browser->>Function: Request a session key
+  Function->>Function: Validate request
+  Function-->>Browser: Short-lived key (rotates on a time window)
+  loop Each chunk of a track
+    Browser->>Function: Request one encrypted chunk
+    Function->>Function: Validate request, window, and catalog
+    Function->>R2: Retrieve the chunk range
+    R2-->>Function: Audio bytes
+    Function-->>Browser: Encrypted chunk
+  end
+  Browser->>Browser: Decrypt, reassemble, decode, and play
 ```
 
 ## 公開範囲 / Public scope
