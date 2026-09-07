@@ -44,17 +44,28 @@ path is designed. This does not promise to make copying impossible; it is a
 practical boundary that treats original audio separately from static public
 material while accepting browser playback as the premise.
 
-この境界は運用の中で一段進みました。復号鍵は配布物から消え、時間窓ごとに
-失効する短命の鍵に置き換わり、音源は分割チャンクの個別暗号化で届きます。
-複製を不可能にする約束ではないことは変わりません。変わったのは、鍵と道具が
-腐る速さです。
+この境界は運用の中で二段進みました。一段目で復号鍵は配布物から消え、時間窓ごとに
+失効する短命の鍵と分割チャンクの個別暗号化になりました。二段目が封印セッションです。
+鍵はページ内で生成した鍵対に包まれて届き取り出せない形でしか存在せず、区間はサーバが
+再生速度で押し出し、線上には鍵も資格情報もURLも識別子も残りません。保存した通信は
+何も復号できず、再生より速い取得はサーバの時計が拒みます。
+
+約束の形は変わりました。一段目は「道具が腐る速さ」を上げるものでしたが、二段目は
+再生中の録音という一線を明記したうえで、それ以外を閉じるものです。
 
 **EN**<br>
-The boundary has since advanced one step in operation. The decryption key is
-gone from everything that ships, replaced by short-lived keys that expire with
-their time window, and the audio arrives as separately encrypted chunks. The
-promise is unchanged — copying is not made impossible. What changed is how
-fast keys and tooling rot.
+The boundary has since advanced two steps in operation. The first took the
+decryption key out of everything that ships: short-lived keys expiring with
+their time window, separately encrypted chunks. The second is sealed sessions:
+the key arrives wrapped to a key pair generated in the page and exists only in
+non-extractable form, segments are pushed by the server at playback speed, and
+nothing on the wire is a key, a credential, a URL or an identifier. A saved
+trace decrypts nothing; pulling faster than real time is refused by the
+server's clock.
+
+The shape of the promise changed with it. The first step made tooling rot
+faster; the second names the one thing left — recording as it plays — and
+closes everything short of it.
 
 ## AIとの反復 / Iterating with AI
 

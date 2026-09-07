@@ -115,19 +115,37 @@ can play the audio cannot keep it completely secret. The purpose is to separate
 the original audio from static public URLs and unrestricted direct links: a
 delivery boundary for the audio itself.
 
-境界はその後、鍵を配布物から消すところまで進みました。ブラウザはサーバ側で
-時間窓ごとに導出される短命の鍵をハンドシェイクで受け取り、音源は分割された
-チャンクとして個別に暗号化されて届きます。1つのURLがファイル全体を返すことは
-なく、持ち出された鍵や吸い出しの道具は時間で失効します。ブラウザ再生という
-前提は変わらないまま、複製の道具が使い捨てになる構造です。
+境界はその後、二段進みました。最初の段では鍵を配布物から消し、時間窓ごとに
+失効する短命の鍵と、分割チャンクの個別暗号化に置き換えました。いまの段は
+**封印されたセッション**です。ページはその場で鍵対を生成し、セッションの鍵は
+その鍵対に包まれて届き、ブラウザの中では取り出せない鍵としてしか存在しません。
+音源はあらかじめサンプル単位で正確な短い区間に切ってあり、サーバが再生速度で
+押し出します。ページが区間を要求することは無いので、要求ごとの資格情報も、
+区間を指すURLも、線上を流れる文も存在しません。保存した通信は別の場所でも
+別の時間でも何も復号できず、再生より速く引き出すことはサーバの時計が拒みます。
+セッションの識別子さえ線上には出ません。
+
+残る一線は、再生中の音を録ることです。ブラウザで再生する以上それは止められず、
+この設計はそこを明記したうえで、それ以外 — 通信の保存、道具の再利用、一括の
+吸い出し、他サイトからの埋め込み — を閉じています。
 
 **EN**<br>
-The boundary has since moved the key out of everything that ships. The browser
-receives a short-lived key through a handshake, derived server-side per time
-window, and the audio arrives as separately encrypted chunks. No single URL
-returns a whole file, and a carried-off key — or a script built around one —
-expires on a timer. The premise of browser playback is unchanged; what changed
-is that copying tools became disposable.
+The boundary has since moved two steps. The first took the key out of
+everything that ships: short-lived keys that expired with their time window,
+and separately encrypted chunks. The current step is **sealed sessions**. The
+page generates a key pair on the spot; the session's key arrives wrapped to that
+pair and exists in the browser only as a non-extractable key. The audio is cut
+in advance into short, sample-exact segments, and the server pushes them at
+playback speed. The page never asks for a segment, so there is no per-request
+credential, no URL that names a segment, and nothing textual on the wire. A
+saved trace decrypts nothing anywhere else or later; pulling faster than real
+time is refused by the server's clock. Even the session identifier stays off
+the wire.
+
+What remains is recording the audio as it plays. A browser that plays it cannot
+prevent that, and the design says so — then closes everything short of it:
+saving the trace, reusing the tooling, bulk extraction, embedding from another
+site.
 
 ## 実装設計図 / Implementation architecture
 
@@ -142,7 +160,7 @@ flowchart TB
       Interface --> Scenes["Scene manager\nA: Listening Field\nB: Studio Brief"]
       Interface --> Audio["Shared audio system"]
       Scenes --> Audio
-      Audio --> Stream["Fetch, decrypt, decode"]
+      Audio --> Stream["Sealed session: receive, decrypt, decode"]
       Stream --> Context["Web Audio API\nGain / analyser"]
       Context --> Mix["Stem mix / waveform visualizers"]
 
@@ -165,17 +183,18 @@ sequenceDiagram
   participant R2 as Private audio storage
   Note over Browser,R2: NULL-N — Sound × AI × Engineering
 
-  Browser->>Function: Request a session key
-  Function->>Function: Validate request
-  Function-->>Browser: Short-lived key (rotates on a time window)
-  loop Each chunk of a track
-    Browser->>Function: Request one encrypted chunk
-    Function->>Function: Validate request, window, and catalog
-    Function->>R2: Retrieve the chunk range
-    R2-->>Function: Audio bytes
-    Function-->>Browser: Encrypted chunk
+  Browser->>Browser: Generate a key pair for this session
+  Browser->>Function: Open one connection per track (origin checked)
+  Browser->>Function: Public key
+  Function-->>Browser: Session key, wrapped to that key pair
+  Browser->>Browser: Unwrap into a non-extractable key
+  Browser->>Function: Sealed request: which track
+  Function->>R2: Segments of the track
+  loop Server-paced: a short burst, then playback speed
+    Function-->>Browser: Sealed segment (bound to session, track, position)
+    Browser->>Browser: Decrypt, decode, feed the audio engine
   end
-  Browser->>Browser: Decrypt, reassemble, decode, and play
+  Note over Browser: One engine, one read position — the stems stay in lockstep
 ```
 
 ## 公開範囲 / Public scope
